@@ -1,47 +1,35 @@
-# ccache support is disabled unless your language is a C-derivative. However
-# `language: C` unconditionally sets `CC=compiler`. If we just set it in our
-# `env` it will be overwritten by the default (gcc 4.6).
-language: c
-compiler: /usr/bin/gcc-4.7
-cache: ccache
-sudo: false
-
-# The test suite is in general way too stressful for travis, especially in
-# terms of time limit and reliability. In the past we've tried to scale things
-# back to only build the stage1 compiler and run a subset of tests, but this
-# didn't end up panning out very well.
-#
-# As a result, we're just using travis to run `make tidy` and *only* build
-# stage1 but *not* test it for now (a strict subset of the bootstrap). This will
-# catch "obvious" errors like style or not even compiling.
-#
-# We need gcc4.7 or higher to build LLVM, and travis (well, Ubuntu 12.04)
-# currently ships with 4.6. Gotta download our own.
-before_script:
-  - ./configure --enable-ccache
-script:
-  - make tidy
-  - make rustc-stage1 -j4
+os:
+  - linux
 
 env:
-  - CXX=/usr/bin/g++-4.7
+  - WINEARCH=win32
+  - WINEARCH=""
 
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-4.7
-    - g++-4.7
+cache: apt
 
-# Real testing happens on http://buildbot.rust-lang.org/
-#
-# See https://github.com/rust-lang/rust-buildbot
-#     CONTRIBUTING.md#pull-requests
+before_install:
+  - "export DISPLAY=:99.0"
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 800x600x16"
 
-notifications:
-  email: false
+before_script:
+  - sudo add-apt-repository -y ppa:pipelight/stable
+  - sudo apt-get update -qq
+  - sudo apt-get install -y --install-recommends wine-staging wine-staging-compat subversion
+  - wget https://raw.githubusercontent.com/Jactry/msys2_deb/master/msys2-scripts_20150725_i386.deb
+  - sudo dpkg -i msys2-scripts_20150725_i386.deb
 
-branches:
-  only:
-    - master
+language: c
+
+compiler:
+  - gcc
+
+script:
+  - srcdir=~/src
+  - _realname=rust
+  - pkgbuild_repo=https://github.com/Alexpux/MINGW-packages/trunk/mingw-w64-rust-git
+  - svn co ${pkgbuild_repo} ${srcdir}
+  - ln -svf ${PWD} ${srcdir}/${_realname}
+  - cp ${srcdir}/PKGBUILD ~
+  - msys2-prepare
+  - msys2-wrapper "pacman -S --needed --noconfirm mingw-w64-i686-toolchain"
+  - msys2-wrapper "makepkg-mingw -s --noconfirm --noprogressbar --noextract --skippgpcheck -f"
