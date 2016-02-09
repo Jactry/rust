@@ -2,6 +2,6 @@ build:
   image: fracting/msys32
   shell: msys32
   commands:
-    - pacman -S --noconfirm mingw-w64-i686-llvm mingw-w64-i686-toolchain curl mingw-w64-i686-libffi python2
+    - pacman -S --noconfirm mingw-w64-i686-llvm
     - ./configure --prefix=mingw32 --build=i686-w64-mingw32 --host=i686-w64-mingw32 --target=i686-w64-mingw32
     - make
