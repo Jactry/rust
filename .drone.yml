@@ -1,6 +1,6 @@
 build:
   image: fracting/msys32
-  shell: msys32
+  shell: mingw32
   commands:
     - pacman -S --noconfirm mingw-w64-i686-llvm
     - ./configure --prefix=mingw32
